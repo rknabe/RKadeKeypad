@@ -40,15 +40,57 @@ void loop() {
 
   while (customKeypad.available()) {
     keypadEvent e = customKeypad.read();
-    if ((e.bit.KEY >= 48 && e.bit.KEY <= 57) || e.bit.KEY == 35 || e.bit.KEY == 42) {
+    uint8_t key = 0;
+    switch (e.bit.KEY) {
+      case '*':
+        key = 221;
+        break;
+      case '#':
+        key = 235;
+        break;
+      case '1':
+        key = 225;
+        break;
+      case '2':
+        key = 226;
+        break;
+      case '3':
+        key = 227;
+        break;
+      case '4':
+        key = 228;
+        break;
+      case '5':
+        key = 229;
+        break;
+      case '6':
+        key = 230;
+        break;
+      case '7':
+        key = 231;
+        break;
+      case '8':
+        key = 232;
+        break;
+      case '9':
+        key = 233;
+        break;
+      case '0':
+        key = 234;
+        break;
+    }
+
+    //if ((e.bit.KEY >= 48 && e.bit.KEY <= 57) || e.bit.KEY == 35 || e.bit.KEY == 42) {
+    if (key > 0) {
       if (e.bit.EVENT == KEY_JUST_PRESSED) {
-        Keyboard.write(e.bit.KEY);
-        //} else if (e.bit.EVENT == KEY_JUST_RELEASED) {
-        //  Keyboard.release(e.bit.KEY);
-        //}
+        //Keyboard.write(e.bit.KEY);
+        Keyboard.press(key);
+      } else if (e.bit.EVENT == KEY_JUST_RELEASED) {
+        Keyboard.release(key);
       }
     }
+    //}
   }
 
-  delay(20);
+  delay(10);
 }
