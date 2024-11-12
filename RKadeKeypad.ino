@@ -26,27 +26,34 @@
 #include "keypad_config.h"
 
 //initialize an instance of class NewKeypad
-Adafruit_Keypad customKeypad = Adafruit_Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+Adafruit_Keypad keypad = Adafruit_Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+uint8_t lastKeyPressed = 0;
 
 void setup() {
-  //Serial.begin(9600);
+  Serial.begin(9600);
   Keyboard.begin();
-  customKeypad.begin();
+  keypad.begin();
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  customKeypad.tick();
+  keypad.tick();
 
-  while (customKeypad.available()) {
-    keypadEvent e = customKeypad.read();
+  while (keypad.available()) {
+    keypadEvent e = keypad.read();
     uint8_t key = 0;
     switch (e.bit.KEY) {
       case '*':
         key = 221;
         break;
       case '#':
-        key = 235;
+        if (keypad.isPressed('*')) {
+          Serial.println("combo");
+          key =	224;
+        } else {
+          key = 235;
+          Serial.println("not combo");
+        }
         break;
       case '1':
         key = 225;
@@ -84,12 +91,15 @@ void loop() {
     if (key > 0) {
       if (e.bit.EVENT == KEY_JUST_PRESSED) {
         //Keyboard.write(e.bit.KEY);
-        Keyboard.press(key);
+        //if (key != lastKeyPressed) {
+          Keyboard.press(key);          
+       // }
+        lastKeyPressed = key;
       } else if (e.bit.EVENT == KEY_JUST_RELEASED) {
         Keyboard.release(key);
+        //lastKeyPressed = 0;
       }
-    }
-    //}
+    }    
   }
 
   delay(10);
