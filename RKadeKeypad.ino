@@ -1,20 +1,20 @@
 #include <Keypad.h>
 #include "Keyboard.h"
 
-const byte ROWS = 4;  //four rows
-const byte COLS = 3;  //three columns
-char keys[ROWS][COLS] = {
+const byte KEYPAD_ROWS = 4;  //four rows
+const byte KEYPAD_COLS = 3;  //three columns
+char keys[KEYPAD_ROWS][KEYPAD_COLS] = {
   { '1', '2', '3' },
   { '4', '5', '6' },
   { '7', '8', '9' },
   { '*', '0', '#' }
 };
-byte rowPins[ROWS] = { 5, 4, 3, 2 };  //connect to the row pinouts of the kpd
-byte colPins[COLS] = { 8, 7, 6 };     //connect to the column pinouts of the kpd
+byte rowPins[KEYPAD_ROWS] = { 5, 4, 3, 2 };  //connect to the row pinouts of the kpd
+byte colPins[KEYPAD_COLS] = { 8, 7, 6 };     //connect to the column pinouts of the kpd
 //byte rowPins[ROWS] = { 2, 3, 4, 5 };  //connect to the row pinouts of the kpd
 //byte colPins[COLS] = { 8, 9, 10 };    //connect to the column pinouts of the kpd
 
-Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, KEYPAD_ROWS, KEYPAD_COLS);
 
 void setup() {
   Serial.begin(9600);
