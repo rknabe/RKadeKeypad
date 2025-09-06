@@ -9,15 +9,11 @@ char keys[KEYPAD_ROWS][KEYPAD_COLS] = {
   { '7', '8', '9' },
   { '*', '0', '#' }
 };
-byte rowPins[KEYPAD_ROWS] = { 5, 4, 3, 2 };  //connect to the row pinouts of the kpd
-byte colPins[KEYPAD_COLS] = { 8, 7, 6 };     //connect to the column pinouts of the kpd
-//byte rowPins[ROWS] = { 2, 3, 4, 5 };  //connect to the row pinouts of the kpd
-//byte colPins[COLS] = { 8, 9, 10 };    //connect to the column pinouts of the kpd
-
+byte rowPins[KEYPAD_ROWS] = { 1, 6, 5, 3 };  //connect to the row pinouts of the kpd
+byte colPins[KEYPAD_COLS] = { 2, 0, 4 };     //connect to the column pinouts of the kpd
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, KEYPAD_ROWS, KEYPAD_COLS);
 
 void setup() {
-  Serial.begin(9600);
   Keyboard.begin();
 }
 
@@ -52,56 +48,26 @@ void loop() {
         char keycode = 0;
         switch (key) {
           case '*':
-            keycode = 221;
+            keycode = KEY_KP_ASTERISK;
             break;
           case '#':
-            keycode = 235;
+            keycode = KEY_KP_DOT;
             break;
-          case '1':
-            keycode = 225;
-            break;
-          case '2':
-            keycode = 226;
-            break;
-          case '3':
-            keycode = 227;
-            break;
-          case '4':
-            keycode = 228;
-            break;
-          case '5':
-            keycode = 229;
-            break;
-          case '6':
-            keycode = 230;
-            break;
-          case '7':
-            keycode = 231;
-            break;
-          case '8':
-            keycode = 232;
-            break;
-          case '9':
-            keycode = 233;
+          case '1' ... '9':
+            keycode = KEY_KP_1 + (key - 49);
             break;
           case '0':
-            keycode = 234;
+            keycode = KEY_KP_0;
             break;
         }
 
         switch (keypad.key[i].kstate) {  // Report active key state : IDLE, PRESSED, HOLD, or RELEASED
           case PRESSED:
             if (key == '#' && (isHeld('*') || isPressed('*'))) {
-              keycode = 224;
-              Keyboard.press(keycode);
-              delay(100);
-              Keyboard.releaseAll();
+              Keyboard.write(KEY_KP_ENTER);
             } else if (key == '6' && (isHeld('*') || isPressed('*'))) {
               //*6 will toggle numlock mode
-              keycode = 219;
-              Keyboard.press(keycode);
-              delay(100);
-              Keyboard.releaseAll();
+              Keyboard.write(KEY_NUM_LOCK);
             } else {
               Keyboard.press(keycode);
             }
@@ -117,4 +83,6 @@ void loop() {
       }
     }
   }
+
+  delay(50);
 }  // End loop
