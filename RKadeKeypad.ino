@@ -1,5 +1,5 @@
 #include <Keypad.h>
-#include "Keyboard.h"
+#include <HID-Project.h>
 
 const byte KEYPAD_ROWS = 4;  //four rows
 const byte KEYPAD_COLS = 3;  //three columns
@@ -14,7 +14,55 @@ byte colPins[KEYPAD_COLS] = { 2, 0, 4 };     //connect to the column pinouts of 
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, KEYPAD_ROWS, KEYPAD_COLS);
 
 void setup() {
-  Keyboard.begin();
+  BootKeyboard.begin();
+}
+
+void processKeypad() {
+  if (keypad.getKeys()) {
+    for (int i = 0; i < LIST_MAX; i++) {  // Scan the whole key list.
+      if (keypad.key[i].stateChanged) {   // Only find keys that have changed state.
+        char key = keypad.key[i].kchar;
+        char keycode = 0;
+        switch (key) {
+          case '*':
+            keycode = KEYPAD_MULTIPLY;
+            break;
+          case '#':
+            keycode = KEYPAD_DOT;
+            break;
+          case '1' ... '9':
+            keycode = KEYPAD_1 + (key - 49);
+            break;
+          case '0':
+            keycode = KEYPAD_0;
+            break;
+        }
+
+        switch (keypad.key[i].kstate) {  // Report active key state : IDLE, PRESSED, HOLD, or RELEASED
+          case PRESSED:
+            if (key == '#' && (isHeld('*') || isPressed('*'))) {
+              BootKeyboard.write(KEYPAD_ENTER);
+            } else if (key == '6' && (isHeld('*') || isPressed('*'))) {
+              //*6 will toggle numlock mode
+              BootKeyboard.write(KEY_NUM_LOCK);
+            } else {
+              if (!BootKeyboard.getLeds() & LED_NUM_LOCK) {
+                BootKeyboard.write(KEY_NUM_LOCK);
+              }
+              BootKeyboard.press(KeyboardKeycode(keycode));
+            }
+            break;
+          case HOLD:
+            break;
+          case RELEASED:
+            BootKeyboard.release(KeyboardKeycode(keycode));
+            break;
+          case IDLE:
+            break;
+        }
+      }
+    }
+  }
 }
 
 bool isHeld(char keyChar) {
@@ -24,7 +72,7 @@ bool isHeld(char keyChar) {
         return true;
     }
   }
-  return false;  // Not pressed.
+  return false;  // Not held.
 }
 
 bool isPressed(char keyChar) {
@@ -38,51 +86,6 @@ bool isPressed(char keyChar) {
 }
 
 void loop() {
-
-  // Fills keypad.key[ ] array with up-to 10 active keys.
-  // Returns true if there are ANY active keys.
-  if (keypad.getKeys()) {
-    for (int i = 0; i < LIST_MAX; i++) {  // Scan the whole key list.
-      if (keypad.key[i].stateChanged) {   // Only find keys that have changed state.
-        char key = keypad.key[i].kchar;
-        char keycode = 0;
-        switch (key) {
-          case '*':
-            keycode = KEY_KP_ASTERISK;
-            break;
-          case '#':
-            keycode = KEY_KP_DOT;
-            break;
-          case '1' ... '9':
-            keycode = KEY_KP_1 + (key - 49);
-            break;
-          case '0':
-            keycode = KEY_KP_0;
-            break;
-        }
-
-        switch (keypad.key[i].kstate) {  // Report active key state : IDLE, PRESSED, HOLD, or RELEASED
-          case PRESSED:
-            if (key == '#' && (isHeld('*') || isPressed('*'))) {
-              Keyboard.write(KEY_KP_ENTER);
-            } else if (key == '6' && (isHeld('*') || isPressed('*'))) {
-              //*6 will toggle numlock mode
-              Keyboard.write(KEY_NUM_LOCK);
-            } else {
-              Keyboard.press(keycode);
-            }
-            break;
-          case HOLD:
-            break;
-          case RELEASED:
-            Keyboard.release(keycode);
-            break;
-          case IDLE:
-            break;
-        }
-      }
-    }
-  }
-
+  processKeypad();
   delay(50);
 }  // End loop
