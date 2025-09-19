@@ -49,18 +49,18 @@ void processKeypad() {
           case HOLD:
             if (key == '#') {
               lastKeyHeld = '#';
-              BootKeyboard.write(KEYPAD_ENTER);
+              send(KEYPAD_ENTER);
             } else if (key == '*') {
               lastKeyHeld = '*';
-              BootKeyboard.write(KEYPAD_DIVIDE);
+              send(KEYPAD_DIVIDE);
             } else if (key == '6') {
               lastKeyHeld = '6';
-              BootKeyboard.write(KEY_NUM_LOCK);
+              send(KEY_NUM_LOCK);
             }
             break;
           case RELEASED:
             if (key != lastKeyHeld) {
-              BootKeyboard.write(KeyboardKeycode(keycode));
+              send(keycode);
             }
             lastKeyHeld = ' ';
             break;
@@ -70,6 +70,12 @@ void processKeypad() {
       }
     }
   }
+}
+
+void send(char keycode) {
+  BootKeyboard.press(KeyboardKeycode(keycode));
+  delay(40);
+  BootKeyboard.release(KeyboardKeycode(keycode));
 }
 
 void loop() {
