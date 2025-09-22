@@ -13,10 +13,12 @@ byte rowPins[KEYPAD_ROWS] = { 1, 6, 5, 3 };  //connect to the row pinouts of the
 byte colPins[KEYPAD_COLS] = { 2, 0, 4 };     //connect to the column pinouts of the kpd
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, KEYPAD_ROWS, KEYPAD_COLS);
 char lastKeyHeld = ' ';
+bool numPadMode = true;
 
 void setup() {
   BootKeyboard.begin();
-  keypad.setHoldTime(1000);
+  keypad.setHoldTime(1010);
+  numPadMode = true;
 }
 
 void processKeypad() {
@@ -27,16 +29,32 @@ void processKeypad() {
         char keycode = 0;
         switch (key) {
           case '*':
-            keycode = KEYPAD_MULTIPLY;
+            if (numPadMode) {
+              keycode = KEYPAD_MULTIPLY;
+            } else {
+              keycode = KEY_N;
+            }
             break;
           case '#':
-            keycode = KEYPAD_DOT;
+            if (numPadMode) {
+              keycode = KEYPAD_DOT;
+            } else {
+              keycode = KEY_ENTER;
+            }
             break;
           case '1' ... '9':
-            keycode = KEYPAD_1 + (key - 49);
+            if (numPadMode) {
+              keycode = KEYPAD_1 + (key - 49);
+            } else {
+              keycode = KEY_1 + (key - 49);
+            }
             break;
           case '0':
-            keycode = KEYPAD_0;
+            if (numPadMode) {
+              keycode = KEYPAD_0;
+            } else {
+              keycode = KEY_0;
+            }
             break;
         }
 
@@ -56,6 +74,9 @@ void processKeypad() {
             } else if (key == '6') {
               lastKeyHeld = '6';
               send(KEY_NUM_LOCK);
+            } else if (key == '0') {
+              lastKeyHeld = '0';
+              numPadMode = !numPadMode;
             }
             break;
           case RELEASED:
