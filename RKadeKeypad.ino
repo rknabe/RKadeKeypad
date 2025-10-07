@@ -14,11 +14,20 @@ byte colPins[KEYPAD_COLS] = { 2, 0, 4 };     //connect to the column pinouts of 
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, KEYPAD_ROWS, KEYPAD_COLS);
 char lastKeyHeld = ' ';
 bool numPadMode = true;
+#define SERIAL_BAUDRATE 115200
+#define VERSION "1.0.1"
+#define HOLD_TIME 1100
 
 void setup() {
+  Serial.begin(SERIAL_BAUDRATE);
+  Serial.setTimeout(50);
+
   BootKeyboard.begin();
-  keypad.setHoldTime(1010);
+  keypad.setHoldTime(HOLD_TIME);
   numPadMode = true;
+
+  //this help firmware update
+  delay(500);
 }
 
 void processKeypad() {
@@ -65,19 +74,35 @@ void processKeypad() {
             }
             break;
           case HOLD:
-            if (key == '#') {
-              lastKeyHeld = '#';
-              send(KEYPAD_ENTER);
-            } else if (key == '*') {
-              lastKeyHeld = '*';
-              send(KEYPAD_DIVIDE);
-            } else if (key == '6') {
-              lastKeyHeld = '6';
-              send(KEY_NUM_LOCK);
-            } else if (key == '0') {
-              lastKeyHeld = '0';
-              numPadMode = !numPadMode;
+            switch (key) {
+              case '#':
+                send(KEYPAD_ENTER);
+                break;
+              case '*':
+                send(KEYPAD_DIVIDE);
+                break;
+              case '6':
+                send(KEY_NUM_LOCK);
+                break;
+              case '0':
+                numPadMode = !numPadMode;
+                break;
+              case '1':
+                numPadMode = true;
+                break;
+              case '2':
+                numPadMode = false;
+                break;
+              case '3':
+                if (key != lastKeyHeld) {
+                  lastKeyHeld = key;
+                  BootKeyboard.press(KeyboardKeycode(keycode));
+                  delay(500);
+                  BootKeyboard.releaseAll();
+                }
+                break;
             }
+            lastKeyHeld = key;
             break;
           case RELEASED:
             if (key != lastKeyHeld) {
@@ -99,7 +124,37 @@ void send(char keycode) {
   BootKeyboard.release(KeyboardKeycode(keycode));
 }
 
+void processSerial() {
+  if (Serial.available()) {
+    char cmd[16];
+    uint8_t cmdLength;
+    int32_t arg1 = -32768;
+
+    cmdLength = Serial.readBytesUntil(' ', cmd, 15);
+    cmd[cmdLength] = 0;
+
+    if (Serial.available())
+      arg1 = Serial.parseInt(SKIP_WHITESPACE);
+
+    if (strcmp_P(cmd, PSTR("numPadMode")) == 0) {
+      if (arg1 == 1) {
+        numPadMode = true;
+      } else if (arg1 == 0 || arg1 == 2) {
+        numPadMode = false;
+      } else {
+        numPadMode = true;
+      }
+      Serial.print("numPadMode:");
+      Serial.println(numPadMode);
+    } else if (strcmp_P(cmd, PSTR("version")) == 0) {
+      Serial.print("version:");
+      Serial.println(VERSION);
+    }
+  }
+}
+
 void loop() {
   processKeypad();
+  processSerial();
   delay(50);
 }  // End loop
