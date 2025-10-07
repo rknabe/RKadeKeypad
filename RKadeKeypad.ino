@@ -14,13 +14,13 @@ byte colPins[KEYPAD_COLS] = { 2, 0, 4 };     //connect to the column pinouts of 
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, KEYPAD_ROWS, KEYPAD_COLS);
 char lastKeyHeld = ' ';
 bool numPadMode = true;
-#define SERIAL_BAUDRATE 115200
+#define SERIAL_BAUDRATE 9600
 #define VERSION "1.0.1"
 #define HOLD_TIME 1100
 
 void setup() {
   Serial.begin(SERIAL_BAUDRATE);
-  Serial.setTimeout(50);
+  Serial.setTimeout(100);
 
   BootKeyboard.begin();
   keypad.setHoldTime(HOLD_TIME);
@@ -97,7 +97,7 @@ void processKeypad() {
                 if (key != lastKeyHeld) {
                   lastKeyHeld = key;
                   BootKeyboard.press(KeyboardKeycode(keycode));
-                  delay(500);
+                  delay(575);
                   BootKeyboard.releaseAll();
                 }
                 break;
@@ -136,18 +136,16 @@ void processSerial() {
     if (Serial.available())
       arg1 = Serial.parseInt(SKIP_WHITESPACE);
 
-    if (strcmp_P(cmd, PSTR("numPadMode")) == 0) {
+    if (strcmp_P(cmd, PSTR("mode")) == 0) {
       if (arg1 == 1) {
         numPadMode = true;
-      } else if (arg1 == 0 || arg1 == 2) {
+      } else if (arg1 == 2) {
         numPadMode = false;
-      } else {
-        numPadMode = true;
       }
-      Serial.print("numPadMode:");
-      Serial.println(numPadMode);
+      Serial.print("mode:");
+      Serial.println(numPadMode ? 1 : 2);
     } else if (strcmp_P(cmd, PSTR("version")) == 0) {
-      Serial.print("version:");
+      Serial.print("rkade keypad version:");
       Serial.println(VERSION);
     }
   }
@@ -156,5 +154,5 @@ void processSerial() {
 void loop() {
   processKeypad();
   processSerial();
-  delay(50);
+  delay(6);
 }  // End loop
