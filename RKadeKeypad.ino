@@ -154,5 +154,5 @@ void processSerial() {
 void loop() {
   processKeypad();
   processSerial();
-  delay(6);
+  delay(50);
 }  // End loop
