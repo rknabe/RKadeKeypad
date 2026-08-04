@@ -21,6 +21,15 @@ struct Config {
   byte colPin3;
 };
 
+typedef struct {
+  char id[13];
+  char ver[6];
+  byte type;
+} Settings;
+
+Settings settings;
+uint8_t buffer[64];
+
 //byte rowPins[KEYPAD_ROWS] = { 1, 6, 5, 3 };  //connect to the row pinouts of the kpd
 //byte colPins[KEYPAD_COLS] = { 2, 0, 4 };     //connect to the column pinouts of the kpd
 byte rowPins[KEYPAD_ROWS];  //connect to the row pinouts of the motogp kpd
@@ -70,6 +79,14 @@ void setup() {
   BootKeyboard.begin();
   keypad.setHoldTime(HOLD_TIME);
   numPadMode = true;
+
+  strcpy(settings.ver, VERSION);
+  strcpy(settings.id, "RKADE KEYPAD");
+  settings.type = 0;
+
+  //BootKeyboard.setFeatureReport(&settings, sizeof(settings));
+  //BootKeyboard.enableFeatureReport();
+  RawHID.begin(buffer, 64);
 
   //this helps firmware update
   delay(500);
@@ -178,44 +195,45 @@ void processSerial() {
     cmdLength = Serial.readBytesUntil(' ', cmd, 15);
     cmd[cmdLength] = 0;
 
-    if (Serial.available())
+    if (Serial.available()) {
       arg1 = Serial.parseInt(SKIP_WHITESPACE);
 
-    if (strcmp_P(cmd, PSTR("mode")) == 0) {
-      if (arg1 == 1) {
-        numPadMode = true;
-      } else if (arg1 == 2) {
-        numPadMode = false;
+      if (strcmp_P(cmd, PSTR("mode")) == 0) {
+        if (arg1 == 1) {
+          numPadMode = true;
+        } else if (arg1 == 2) {
+          numPadMode = false;
+        }
+        Serial.print("mode:");
+        Serial.println(numPadMode ? 1 : 2);
+      } else if (strcmp_P(cmd, PSTR("version")) == 0) {
+        Serial.print("rkade keypad version:");
+        Serial.println(VERSION);
+      } else if (strcmp_P(cmd, PSTR("setTypeMotoGp")) == 0) {
+        Config config;
+        config.colPin1 = 3;
+        config.colPin2 = 2;
+        config.colPin3 = 4;
+        config.rowPin1 = 0;
+        config.rowPin2 = 1;
+        config.rowPin3 = 6;
+        config.rowPin4 = 5;
+        EEPROM.put(0, config);
+        Serial.println("Saved setting for motogp type");
+        resetFunc();
+      } else if (strcmp_P(cmd, PSTR("setTypeDefault")) == 0) {
+        Config config;
+        config.colPin1 = 2;
+        config.colPin2 = 0;
+        config.colPin3 = 4;
+        config.rowPin1 = 1;
+        config.rowPin2 = 6;
+        config.rowPin3 = 5;
+        config.rowPin4 = 3;
+        EEPROM.put(0, config);
+        Serial.println("Saved setting for default type");
+        resetFunc();
       }
-      Serial.print("mode:");
-      Serial.println(numPadMode ? 1 : 2);
-    } else if (strcmp_P(cmd, PSTR("version")) == 0) {
-      Serial.print("rkade keypad version:");
-      Serial.println(VERSION);
-    } else if (strcmp_P(cmd, PSTR("setTypeMotoGp")) == 0) {
-      Config config;
-      config.colPin1 = 3;
-      config.colPin2 = 2;
-      config.colPin3 = 4;
-      config.rowPin1 = 0;
-      config.rowPin2 = 1;
-      config.rowPin3 = 6;
-      config.rowPin4 = 5;
-      EEPROM.put(0, config);
-      Serial.println("Saved setting for motogp type");
-      resetFunc();
-    } else if (strcmp_P(cmd, PSTR("setTypeDefault")) == 0) {
-      Config config;
-      config.colPin1 = 2;
-      config.colPin2 = 0;
-      config.colPin3 = 4;
-      config.rowPin1 = 1;
-      config.rowPin2 = 6;
-      config.rowPin3 = 5;
-      config.rowPin4 = 3;
-      EEPROM.put(0, config);
-      Serial.println("Saved setting for default type");
-      resetFunc();
     }
   }
 }
@@ -223,5 +241,30 @@ void processSerial() {
 void loop() {
   processKeypad();
   processSerial();
+
+  memset(buffer, 0, 64);
+  buffer[0] = 3;
+  memcpy(&buffer[1], &settings, sizeof(settings));
+  RawHID.write(buffer, sizeof(buffer));
+  //RawHID.setFeatureReport(buffer, sizeof(buffer));
+  //RawHID.write(buffer, sizeof(buffer));*/
+
+  //uint8_t buffer[64]; // RawHID typically uses 64-byte packets
+  // Fill buffer with data
+  //buffer[0] = 0x01; // Example command
+  //buffer[1] = 0x02;
+  //buffer[2] = 0x05;
+  //RawHID.write(buffer, sizeof(buffer));
+
+
+  // Check if there is new data from the RawHID device
+  auto bytesAvailable = RawHID.available();
+  if (bytesAvailable) {
+    // Mirror data via Serial
+    while (bytesAvailable--) {
+      Serial.println(RawHID.read());
+    }
+  }
+
   delay(50);
 }  // End loop
